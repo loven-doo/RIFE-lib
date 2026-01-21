@@ -1,14 +1,27 @@
 *.pyc
 *.py~
 *.py#
+*__pycache__/
+*.ipynb_checkpoints/
+*Untitled.ipynb
 
-*.pkl
+# *.pkl
 output/*
 train_log/*
 *.mp4
 
-test/
+*test_results/
 .idea/
 *.npz
 
 *.zip
+
+dist/
+build/
+RIFE.egg-info/
+*.log
+*.log.*
+*.dat
+*.fuse_hidden*
+*.DS_Store
+venv/
