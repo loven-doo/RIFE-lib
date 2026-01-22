@@ -38,7 +38,7 @@ def main():
     interpolation = Interpolation.load(scale=args.scale, fp16=args.fp16, exp=args.exp, device=args.device)
     output = np.uint8(interpolation(torch.from_numpy(np.array(frames))).cpu().numpy())
 
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
     video_path_wo_ext, ext = os.path.splitext(args.video)
     mult = 2 ** interpolation.exp
     target_fps = int(np.round(fps*mult))
