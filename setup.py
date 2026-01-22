@@ -11,8 +11,7 @@ setup(name='RIFE',
           "License :: OSI Approved :: MIT License",
           "Operating System :: OS Independent",
       ],
-      packages=find_packages(exclude=find_packages("Research") +
-                                     ["eagle.tests", "eaglib.tests", "eagledb.tests", "Research"]),
+      packages=find_packages(),
       package_data={'rife': ['model/*']},
       install_requires=[
           "numpy == 1.26.4",
