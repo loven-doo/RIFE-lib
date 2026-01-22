@@ -1,5 +1,7 @@
 import os
+from distutils.command.build_scripts import first_line_re
 
+import numpy as np
 from tqdm import tqdm
 import torch
 from torch.nn import functional as F
@@ -34,24 +36,24 @@ class Interpolation(object):
         if self.fp16:
             torch.set_default_tensor_type(torch.cuda.HalfTensor)
 
-        videogen.to(device=self.device)
+        videogen = videogen.to(device=self.device)
         tot_frame = len(videogen)
-        lastframe = videogen[0]
-        h, w, _ = lastframe.shape
+        first_frame = videogen[0]
+        h, w, _ = first_frame.shape
         tmp = max(32, int(32 / self.scale))
         ph = ((h - 1) // tmp + 1) * tmp
         pw = ((w - 1) // tmp + 1) * tmp
         padding = (0, pw - w, 0, ph - h)
         pbar = tqdm(total=tot_frame)
 
-        I0 = torch.reshape(lastframe, (2, 0, 1)).unsqueeze(0).float() / 255.
+        I0 = torch.permute(first_frame, (2, 0, 1)).unsqueeze(0).float() / 255.
         I0 = self.pad_image(I0, padding=padding)
         output = list()
 
         j = 1
         while j < tot_frame:
             frame = videogen[j]
-            I1 = torch.reshape(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
+            I1 = torch.permute(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
             I1 = self.pad_image(I1, padding=padding)
             I0_small = F.interpolate(I0, (32, 32), mode='bilinear', align_corners=False)
             I1_small = F.interpolate(I1, (32, 32), mode='bilinear', align_corners=False)
@@ -60,7 +62,7 @@ class Interpolation(object):
             output.append(I0)
             if ssim > 0.996:
                 frame = videogen[j+1]
-                I1 = torch.reshape(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
+                I1 = torch.permute(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
                 I1 = self.pad_image(I1, padding=padding)
                 I1 = self.model.inference(I0, I1, self.scale)
                 I0_small = F.interpolate(I0, (32, 32), mode='bilinear', align_corners=False)
@@ -80,7 +82,7 @@ class Interpolation(object):
         pbar.update(1)
 
         pbar.close()
-        return 255.0 * torch.reshape(torch.stack(output, dim=0), (0, 2, 3, 1))[:, :h, :w]
+        return 255.0 * torch.permute(torch.cat(output, dim=0), (0, 2, 3, 1))[:, :h, :w]
 
     def make_inference(self, I0, I1, n):
         middle = self.model.inference(I0, I1, self.scale)
