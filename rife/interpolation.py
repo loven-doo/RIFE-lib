@@ -81,7 +81,7 @@ class Interpolation(object):
         pbar.update(1)
 
         pbar.close()
-        return (255.0 * torch.permute(torch.cat(output, dim=0), (0, 2, 3, 1))[:, :h, :w]).numpy()
+        return np.uint8((255.0 * torch.permute(torch.cat(output, dim=0), (0, 2, 3, 1))[:, :h, :w]).numpy())
 
     def make_inference(self, I0, I1, n):
         middle = self.model.inference(I0, I1, self.scale)
