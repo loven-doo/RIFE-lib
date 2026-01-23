@@ -32,37 +32,35 @@ class Interpolation(object):
         return cls(model=model, scale=scale, fp16=fp16, exp=exp, device=device)
 
     @torch.inference_mode
-    def __call__(self, videogen: torch.Tensor):
+    def __call__(self, videogen: np.ndarray):
         if self.fp16:
             torch.set_default_tensor_type(torch.cuda.HalfTensor)
 
-        videogen = videogen.to(device=self.device)
         tot_frame = len(videogen)
-        first_frame = videogen[0]
-        h, w, _ = first_frame.shape
+        videoten = torch.permute(torch.from_numpy(videogen), (0, 3, 1, 2)).float() / 255.
+        first_frame = videoten[0].to(device=self.device)
+        _, h, w = first_frame.shape
         tmp = max(32, int(32 / self.scale))
         ph = ((h - 1) // tmp + 1) * tmp
         pw = ((w - 1) // tmp + 1) * tmp
         padding = (0, pw - w, 0, ph - h)
         pbar = tqdm(total=tot_frame)
 
-        I0 = torch.permute(first_frame, (2, 0, 1)).unsqueeze(0).float() / 255.
+        I0 = first_frame.unsqueeze(0)
         I0 = self.pad_image(I0, padding=padding)
         output = list()
 
         j = 1
         while j < tot_frame:
-            frame = videogen[j]
-            I1 = torch.permute(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
+            I1 = videoten[j].to(device=self.device).unsqueeze(0)
             I1 = self.pad_image(I1, padding=padding)
             I0_small = F.interpolate(I0, (32, 32), mode='bilinear', align_corners=False)
             I1_small = F.interpolate(I1, (32, 32), mode='bilinear', align_corners=False)
             ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
 
-            output.append(I0)
+            output.append(I0.cpu())
             if ssim > 0.996 and j < tot_frame-1:
-                frame = videogen[j+1]
-                I1 = torch.permute(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
+                I1 = videoten[j+1].to(device=self.device).unsqueeze(0)
                 I1 = self.pad_image(I1, padding=padding)
                 I1 = self.model.inference(I0, I1, self.scale)
                 I0_small = F.interpolate(I0, (32, 32), mode='bilinear', align_corners=False)
@@ -71,18 +69,19 @@ class Interpolation(object):
 
             if ssim < 0.2:
                 for i in range((2 ** self.exp) - 1):
-                    output.append(I0)
+                    output.append(I0.cpu())
             elif self.exp:
-                output.extend(self.make_inference(I0, I1, 2 ** self.exp - 1))
+                for middle in self.make_inference(I0, I1, 2 ** self.exp - 1):
+                    output.append(middle.cpu())
 
             pbar.update(1)
             I0 = I1
             j += 1
-        output.append(I0)
+        output.append(I0.cpu())
         pbar.update(1)
 
         pbar.close()
-        return 255.0 * torch.permute(torch.cat(output, dim=0), (0, 2, 3, 1))[:, :h, :w]
+        return (255.0 * torch.permute(torch.cat(output, dim=0), (0, 2, 3, 1))[:, :h, :w]).numpy()
 
     def make_inference(self, I0, I1, n):
         middle = self.model.inference(I0, I1, self.scale)

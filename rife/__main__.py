@@ -36,7 +36,7 @@ def main():
         frames.append(image)
 
     interpolation = Interpolation.load(scale=args.scale, fp16=args.fp16, exp=args.exp, device=args.device)
-    output = np.uint8(interpolation(torch.from_numpy(np.array(frames))).cpu().numpy())
+    output = np.uint8(interpolation(np.array(frames)))
 
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
     video_path_wo_ext, ext = os.path.splitext(args.video)

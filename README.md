@@ -8,10 +8,10 @@ pip install git+https://github.com/lovem-doo/RIFE-lib
 # see rife/__main__.py as example
 from rife import Interpolation
 
-your_frames_tensor = ...  # torch.Tensor
+your_frames_array = ...  # numpy.ndarray
 
 interpolation = Interpolation.load()  # see rife.interpolation.Interpolation() for options
-interpolation(your_frames_tensor)
+interpolation(your_frames_array)
 ```
 ## Use as executable
 ```commandline
