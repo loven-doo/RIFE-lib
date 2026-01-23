@@ -60,7 +60,7 @@ class Interpolation(object):
             ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
 
             output.append(I0)
-            if ssim > 0.996:
+            if ssim > 0.996 and j < tot_frame-1:
                 frame = videogen[j+1]
                 I1 = torch.permute(frame, (2, 0, 1)).unsqueeze(0).float() / 255.
                 I1 = self.pad_image(I1, padding=padding)
