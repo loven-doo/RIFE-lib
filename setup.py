@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='RIFE',
-      version='0.1.0',
+      version='0.1.1',
       author="Denis Moshensky",
       author_email="loven7doo@gmail.com",
       description="SDK version of RIFE",

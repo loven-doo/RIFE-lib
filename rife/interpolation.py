@@ -22,6 +22,8 @@ class Interpolation(object):
         self.exp = exp
         self.device = device
 
+        if self.fp16:
+            self.model.flownet.half()
         self.model.device(self.device)
         self.model.eval()
 
